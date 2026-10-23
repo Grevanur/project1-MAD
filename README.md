@@ -20,6 +20,7 @@ flutter run
 - session state machine with duplicate-finish protection
 - explainable Session Scout median rule and baseline metric
 - isolate-based history summary and CSV export
+- opt-in local reminder service with runtime permission handling
 - twenty automated tests
 
 See `OWNERSHIP.md` and `TEAMMATE_HANDOFF.md` for collaboration.
