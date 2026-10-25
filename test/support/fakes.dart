@@ -3,6 +3,7 @@ import 'package:adaptive_focus_studio/domain/focus_preset.dart';
 import 'package:adaptive_focus_studio/domain/repositories.dart';
 import 'package:adaptive_focus_studio/domain/session_log.dart';
 import 'package:adaptive_focus_studio/presentation/app.dart';
+import 'package:adaptive_focus_studio/services/reminder_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -128,6 +129,45 @@ class FakeSessionLogRepository implements SessionLogRepository {
   }
 }
 
+class FakeReminderService extends ReminderService {
+  FakeReminderService({this.permissionGranted = true});
+
+  bool permissionGranted;
+  int initializeCalls = 0;
+  int permissionCalls = 0;
+  int? scheduledId;
+  DateTime? scheduledAt;
+  String? scheduledLabel;
+  int? canceledId;
+  int cancelCalls = 0;
+
+  @override
+  Future<void> initialize() async => initializeCalls++;
+
+  @override
+  Future<bool> requestPermission() async {
+    permissionCalls++;
+    return permissionGranted;
+  }
+
+  @override
+  Future<void> schedule({
+    required int id,
+    required DateTime at,
+    required String presetLabel,
+  }) async {
+    scheduledId = id;
+    scheduledAt = at;
+    scheduledLabel = presetLabel;
+  }
+
+  @override
+  Future<void> cancel(int id) async {
+    cancelCalls++;
+    canceledId = id;
+  }
+}
+
 SessionLog finishedLog({
   int? id,
   int presetId = 1,
@@ -150,6 +190,7 @@ Future<void> pumpApp(
   FakePresetRepository? presets,
   FakeSessionLogRepository? logs,
   Map<String, Object> preferences = const {},
+  ReminderService? reminders,
   Size size = const Size(420, 900),
 }) async {
   SharedPreferences.setMockInitialValues(preferences);
@@ -165,6 +206,8 @@ Future<void> pumpApp(
         sessionLogRepositoryProvider.overrideWithValue(
           logs ?? FakeSessionLogRepository(),
         ),
+        if (reminders != null)
+          reminderServiceProvider.overrideWithValue(reminders),
       ],
       child: const AdaptiveFocusApp(),
     ),

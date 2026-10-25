@@ -10,7 +10,7 @@ Adaptive Focus Studio is an offline Flutter study-session application. Users can
 - History filtering, manual log entry, editing, deletion, and summary statistics
 - SharedPreferences settings, reduced-motion support, and responsive navigation
 - SQLite persistence for related `FocusPreset` and `SessionLog` entities
-- CSV file export and opt-in local reminders
+- CSV file export and permission-gated local reminder scheduling/cancellation
 - Riverpod dependency injection and separated presentation, application, domain, data, and service layers
 - Unit, repository, widget, and Android integration tests
 

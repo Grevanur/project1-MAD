@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/app_database.dart';
 import '../data/sqlite_repositories.dart';
 import '../domain/repositories.dart';
+import '../services/reminder_service.dart';
 import 'session_controller.dart';
 import 'session_scout.dart';
 
@@ -21,3 +22,6 @@ final sessionControllerProvider = Provider<SessionController>(
   (ref) => SessionController(),
 );
 final sessionScoutProvider = Provider<SessionScout>((ref) => SessionScout());
+final reminderServiceProvider = Provider<ReminderService>(
+  (ref) => ReminderService(),
+);

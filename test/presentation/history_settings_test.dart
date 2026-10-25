@@ -147,4 +147,58 @@ void main() {
     expect(prefs.getBool('reduced_motion'), isTrue);
     expect(prefs.getInt('default_minutes'), 25);
   });
+
+  testWidgets('reminder permission is required before enabling', (
+    tester,
+  ) async {
+    final reminders = FakeReminderService(permissionGranted: false);
+    await pumpApp(tester, reminders: reminders);
+    await openTab(tester, 'Settings');
+
+    await tester.tap(find.text('Local reminder'));
+    await tester.tap(find.text('Save settings'));
+    await tester.pumpAndSettle();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(reminders.permissionCalls, 1);
+    expect(prefs.getBool('reminders_enabled'), isNot(true));
+    expect(find.text('Saved locally'), findsNothing);
+    expect(
+      find.text('Notifications were not enabled. Permission is required.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('enabled reminder can be scheduled and canceled', (tester) async {
+    final reminders = FakeReminderService();
+    await pumpApp(tester, reminders: reminders);
+    await openTab(tester, 'Settings');
+
+    await tester.tap(find.text('Local reminder'));
+    await tester.tap(find.text('Save settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Saved locally'), findsOneWidget);
+
+    await tester.tap(find.text('Schedule reminder in 1 minute'));
+    await tester.pumpAndSettle();
+    expect(reminders.scheduledId, 1001);
+    expect(reminders.scheduledLabel, 'your focus session');
+    expect(find.text('Reminder scheduled'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Cancel reminder'));
+    await tester.pumpAndSettle();
+    expect(reminders.canceledId, 1001);
+    expect(reminders.cancelCalls, 1);
+    expect(find.text('Schedule reminder in 1 minute'), findsOneWidget);
+
+    await tester.tap(find.text('Schedule reminder in 1 minute'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Local reminder'));
+    await tester.tap(find.text('Save settings'));
+    await tester.pumpAndSettle();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(reminders.cancelCalls, 2);
+    expect(prefs.getBool('reminders_enabled'), isFalse);
+  });
 }

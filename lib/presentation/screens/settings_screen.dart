@@ -16,14 +16,19 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  static const _reminderId = 1001;
+
   bool _loading = true;
   bool _loadFailed = false;
   bool _saving = false;
+  bool _scheduling = false;
   bool _exporting = false;
   bool _savedOnce = false;
   int _defaultMinutes = 25;
   bool _reducedMotion = false;
   bool _reminders = false;
+  bool _savedReminders = false;
+  DateTime? _scheduledFor;
 
   @override
   void initState() {
@@ -44,6 +49,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _defaultMinutes = settings.defaultMinutes;
         _reducedMotion = settings.reducedMotion;
         _reminders = settings.remindersEnabled;
+        _savedReminders = settings.remindersEnabled;
         _loading = false;
       });
     } catch (_) {
@@ -65,6 +71,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
+      final reminders = ref.read(reminderServiceProvider);
+      if (_reminders && !_savedReminders) {
+        await reminders.initialize();
+        final granted = await reminders.requestPermission();
+        if (!granted) {
+          if (!mounted) return;
+          setState(() => _reminders = false);
+          showMessage(
+            context,
+            'Notifications were not enabled. Permission is required.',
+          );
+          return;
+        }
+      } else if (!_reminders && _savedReminders) {
+        await reminders.initialize();
+        await reminders.cancel(_reminderId);
+        _scheduledFor = null;
+      }
       final store = await ref.read(settingsStoreProvider.future);
       await store.save(
         AppSettings(
@@ -75,12 +99,59 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
       if (!mounted) return;
       refreshAppData(ref);
-      setState(() => _savedOnce = true);
+      setState(() {
+        _savedReminders = _reminders;
+        _savedOnce = true;
+      });
       showMessage(context, 'Settings saved on this device.');
     } catch (_) {
       if (mounted) showMessage(context, 'Could not save settings.');
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _scheduleReminder() async {
+    setState(() => _scheduling = true);
+    try {
+      final reminders = ref.read(reminderServiceProvider);
+      await reminders.initialize();
+      final granted = await reminders.requestPermission();
+      if (!granted) {
+        if (mounted) {
+          showMessage(context, 'Notification permission is required.');
+        }
+        return;
+      }
+      final at = DateTime.now().add(const Duration(minutes: 1));
+      await reminders.schedule(
+        id: _reminderId,
+        at: at,
+        presetLabel: 'your focus session',
+      );
+      if (!mounted) return;
+      setState(() => _scheduledFor = at);
+      showMessage(context, 'Reminder scheduled for 1 minute from now.');
+    } catch (_) {
+      if (mounted) showMessage(context, 'Could not schedule the reminder.');
+    } finally {
+      if (mounted) setState(() => _scheduling = false);
+    }
+  }
+
+  Future<void> _cancelReminder() async {
+    setState(() => _scheduling = true);
+    try {
+      final reminders = ref.read(reminderServiceProvider);
+      await reminders.initialize();
+      await reminders.cancel(_reminderId);
+      if (!mounted) return;
+      setState(() => _scheduledFor = null);
+      showMessage(context, 'Scheduled reminder canceled.');
+    } catch (_) {
+      if (mounted) showMessage(context, 'Could not cancel the reminder.');
+    } finally {
+      if (mounted) setState(() => _scheduling = false);
     }
   }
 
@@ -172,6 +243,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       value: _reminders,
                       onChanged: (value) => _changed(() => _reminders = value),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.schedule_outlined),
+                      title: Text(
+                        _scheduledFor == null
+                            ? 'Schedule reminder in 1 minute'
+                            : 'Reminder scheduled',
+                      ),
+                      subtitle: Text(
+                        !_reminders
+                            ? 'Turn on Local reminder and save settings first.'
+                            : !_savedReminders
+                            ? 'Save settings before scheduling.'
+                            : _scheduledFor == null
+                            ? 'Creates an on-device focus reminder.'
+                            : 'A focus reminder is pending on this device.',
+                      ),
+                      trailing: _scheduling
+                          ? const SizedBox.square(
+                              dimension: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : _scheduledFor == null
+                          ? null
+                          : IconButton(
+                              tooltip: 'Cancel reminder',
+                              onPressed: _cancelReminder,
+                              icon: const Icon(Icons.close),
+                            ),
+                      enabled: _reminders && _savedReminders && !_scheduling,
+                      onTap: _scheduledFor == null ? _scheduleReminder : null,
                     ),
                   ],
                 ),
