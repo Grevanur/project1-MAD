@@ -14,4 +14,32 @@ void main() {
       3.5,
     ),
   );
+
+  test('held-out scenarios beat the fixed baseline', () {
+    const histories = [
+      [20, 25, 30],
+      [15, 20, 35],
+      [30, 35, 40],
+      [8, 9, 12],
+      [55, 65, 70],
+    ];
+    const actual = [27, 22, 33, 11, 58];
+    final suggestions = histories
+        .map(
+          (minutes) => s.suggest(minutes.map((value) => value * 60))!.minutes,
+        )
+        .toList();
+
+    expect(
+      s.meanAbsoluteError(suggestions: suggestions, actualMinutes: actual),
+      1.8,
+    );
+    expect(
+      s.meanAbsoluteError(
+        suggestions: List.filled(actual.length, SessionScout.baselineMinutes),
+        actualMinutes: actual,
+      ),
+      12,
+    );
+  });
 }

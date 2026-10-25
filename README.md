@@ -1,6 +1,18 @@
 # Adaptive Focus Studio
 
-Offline Flutter study-session application. The current foundation contains Gowtham Revanur's assigned architecture, local data, state, timer, Session Scout, background summary, settings, export, and tests. Presentation screens are the teammate-owned integration slice described in `TEAMMATE_HANDOFF.md`.
+Adaptive Focus Studio is an offline Flutter study-session application. Users can create focus presets, run timed sessions, review and edit session history, filter results, export history as CSV, configure local preferences, and optionally schedule local reminders. Session Scout provides an explainable, on-device duration suggestion from recent sessions with the same mood tag.
+
+## Main features
+
+- Dashboard with preset CRUD, mood filtering, averages, and Session Scout
+- Validated preset creation and editing
+- Focus timer with start, pause, resume, finish, reset, and duplicate-finish protection
+- History filtering, manual log entry, editing, deletion, and summary statistics
+- SharedPreferences settings, reduced-motion support, and responsive navigation
+- SQLite persistence for related `FocusPreset` and `SessionLog` entities
+- CSV file export and opt-in local reminders
+- Riverpod dependency injection and separated presentation, application, domain, data, and service layers
+- Unit, repository, widget, and Android integration tests
 
 ## Verify
 
@@ -8,19 +20,17 @@ Offline Flutter study-session application. The current foundation contains Gowth
 flutter pub get
 flutter analyze
 flutter test --coverage
-flutter run
+flutter test integration_test/app_flow_test.dart -d <android-device-id>
+flutter build apk --release
 ```
 
-## Foundation
+The release APK is generated at `build/app/outputs/flutter-apk/app-release.apk`.
 
-- Riverpod dependency injection
-- SQLite `FocusPreset` and `SessionLog` repositories
-- restricted preset deletion while related logs exist
-- SharedPreferences settings store
-- session state machine with duplicate-finish protection
-- explainable Session Scout median rule and baseline metric
-- isolate-based history summary and CSV export
-- opt-in local reminder service with runtime permission handling
-- twenty automated tests
+## Documentation
 
-See `OWNERSHIP.md` and `TEAMMATE_HANDOFF.md` for collaboration.
+- `ARCHITECTURE.md` explains dependency direction, persistence, state, and tradeoffs.
+- `AI_FEATURE.md` documents Session Scout, its baseline comparison, evaluation, and limitations.
+- `OWNERSHIP.md` records team responsibilities.
+- `TEAMMATE_HANDOFF.md` preserves the original UI integration handoff and acceptance checklist.
+
+Repository: https://github.com/Grevanur/project1-MAD
