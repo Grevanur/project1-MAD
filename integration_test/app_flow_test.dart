@@ -22,6 +22,8 @@ void main() {
       find.widgetWithText(TextFormField, 'Label'),
       'Flow Test',
     );
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     await chooseDropdown(
       tester,
       find.byType(DropdownButtonFormField<String>),
@@ -31,7 +33,13 @@ void main() {
       find.widgetWithText(TextFormField, 'Duration (minutes)'),
       '1',
     );
-    await tester.ensureVisible(find.text('Save preset'));
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Save preset'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save preset'));
     await tester.pumpAndSettle();
