@@ -41,6 +41,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
   }
 
+  /// Asks for confirmation, then deletes. Used by the delete button and by
+  /// swipe-to-delete, so both paths share the same confirmation.
   Future<void> _delete(SessionLog log) async {
     final confirmed = await confirmDelete(
       context,
@@ -182,46 +184,81 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               message: 'Try a different filter.',
             ),
           for (final log in filtered)
-            Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              child: ListTile(
-                onTap: () => _openForm(presets, log: log),
-                leading: Icon(
-                  log.status == SessionStatus.finished
-                      ? Icons.check_circle_outline
-                      : Icons.restart_alt,
-                  semanticLabel: log.status == SessionStatus.finished
-                      ? 'Finished'
-                      : 'Reset',
+            Dismissible(
+              key: ValueKey('log-${log.id}'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                alignment: Alignment.centerRight,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                title: Text(
-                  '${labels[log.presetId] ?? 'Deleted preset'} · '
-                  '${formatMinutes(log.completedSeconds)}',
-                ),
-                subtitle: Text(
-                  [
-                    formatDateTime(log.startedAt),
-                    '${log.moodTagSnapshot} · '
-                        '${log.status == SessionStatus.finished ? 'Finished' : 'Reset'}'
-                        '${log.source == 'manual' ? ' · Manual' : ''}',
-                    if (log.note.isNotEmpty) log.note,
-                  ].join('\n'),
-                ),
-                isThreeLine: true,
-                trailing: Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      tooltip: 'Edit log',
-                      onPressed: () => _openForm(presets, log: log),
-                      icon: const Icon(Icons.edit_outlined),
+                    Text(
+                      'Delete',
+                      style: TextStyle(
+                        color: theme.colorScheme.onErrorContainer,
+                      ),
                     ),
-                    IconButton(
-                      tooltip: 'Delete log',
-                      onPressed: () => _delete(log),
-                      icon: const Icon(Icons.delete_outline),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.delete_outline,
+                      color: theme.colorScheme.onErrorContainer,
                     ),
                   ],
+                ),
+              ),
+              // The row is removed by the data refresh after a confirmed
+              // delete, so the Dismissible itself never removes it.
+              confirmDismiss: (_) async {
+                await _delete(log);
+                return false;
+              },
+              child: Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                child: ListTile(
+                  onTap: () => _openForm(presets, log: log),
+                  leading: Icon(
+                    log.status == SessionStatus.finished
+                        ? Icons.check_circle_outline
+                        : Icons.restart_alt,
+                    semanticLabel: log.status == SessionStatus.finished
+                        ? 'Finished'
+                        : 'Reset',
+                  ),
+                  title: Text(
+                    '${labels[log.presetId] ?? 'Deleted preset'} · '
+                    '${formatMinutes(log.completedSeconds)}',
+                  ),
+                  subtitle: Text(
+                    [
+                      formatDateTime(log.startedAt),
+                      '${log.moodTagSnapshot} · '
+                          '${log.status == SessionStatus.finished ? 'Finished' : 'Reset'}'
+                          '${log.source == 'manual' ? ' · Manual' : ''}',
+                      if (log.note.isNotEmpty) log.note,
+                    ].join('\n'),
+                  ),
+                  isThreeLine: true,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Edit log',
+                        onPressed: () => _openForm(presets, log: log),
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                      IconButton(
+                        tooltip: 'Delete log',
+                        onPressed: () => _delete(log),
+                        icon: const Icon(Icons.delete_outline),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
