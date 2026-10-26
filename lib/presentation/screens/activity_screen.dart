@@ -291,18 +291,25 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                   ),
                 ),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    formatClock(remaining),
-                    style: theme.textTheme.displayMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
+              // FittedBox keeps the clock inside the ring at large text sizes.
+              Padding(
+                padding: const EdgeInsets.all(28),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        formatClock(remaining),
+                        style: theme.textTheme.displayMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      Text(status),
+                    ],
                   ),
-                  Text(status),
-                ],
+                ),
               ),
             ],
           ),
